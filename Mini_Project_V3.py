@@ -46,7 +46,7 @@ def get_user_genre_count(user_movies):
     """
     genre_dict_user = genres_dict_init.copy()
     for row in range(len(user_movies)):
-        for item in user_movies.loc[row]['genres'].split('|'):
+        for item in user_movies.loc[row]['genres']:
             try:
                 genre_dict_user[item] += 1
             except KeyError:
@@ -66,12 +66,15 @@ def get_single_user_ratings(single_userid):
 
 
 def get_fav_genres(single_userid):
+    """
+    :param single_userid: a user id (integer)
+    :return: three genres most rated by that user (set object)
+    """
     df_user_ratings_movies = get_single_user_ratings(single_userid)
     # print(df_user_ratings_movies.head())
     genre_dict_user = get_user_genre_count(df_user_ratings_movies)
     # print(genre_dict_user)
 
-    # fav_genres = set({})
     fav_genres = []
     while (len(fav_genres) < 3) and (sum(genre_dict_user.values()) > 0):
         max_value = max(genre_dict_user.values())
@@ -79,9 +82,7 @@ def get_fav_genres(single_userid):
         for key in max_keys:
             fav_genres.append(key)
             genre_dict_user.pop(key)
-    return fav_genres[0:3]
-
-
+    return set(fav_genres[0:3])
 
 
 # ############ MovieId Data #############
@@ -92,7 +93,8 @@ df_movies['release date'] = df_movies['title'].str.extract('.*\((\d\d\d\d)\).*',
 
 df_movies_unknown_release_date = df_movies[df_movies['release date'].isna()]
 
-# df_movies['genres'] = df_movies['genres'].str.lower()
+df_movies['genres'] = df_movies['genres'].str.split('|')
+
 """
 
 movies['genres'] = movies['genres'].str.lower()
@@ -102,10 +104,6 @@ movies[is_animation][5:15]
 movie_genres = movies['genres'].str.split('|', expand=True)
 
 """
-
-
-
-
 
 
 print('movies')
