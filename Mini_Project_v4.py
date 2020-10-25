@@ -34,8 +34,8 @@ genres_dict_init = {'Action': 0,
                     'IMAX': 0}
 
 
-unlisted_genres = set({})  # set to hold genres not included in master genre dictionary
-df_rated = pd.DataFrame()   # used in get_fav_genres() and user_mean_match()
+unlisted_genres = set({})  # holds genres not included in master genre dictionary used in get_user_genre_count()
+df_rated = pd.DataFrame()  # used in get_fav_genres() and user_mean_match()
 
 
 def data_path_ml_25m(path_file_name):
@@ -64,31 +64,19 @@ def get_user_genre_count(user_movies):
     return genre_dict_user
 
 
-def get_single_user_ratings(single_userid, df_users):
-    # global df_ratings_sorted_count
+def get_single_user_ratings(single_userid):
     """
-    :param single_userid: integer value, a userId from the dataset
-    :param df_users: df with 'userId' and 'ratings count all years'
-    :return: DataFrame containing all movie ratings by the given userId
+    :param single_userid:  integer value id a single user id
+    :return df_user_ratings_movies_s: a dataframe with all movie ratings for the single_userid
     """
-    user_count = df_users[df_users['userId'] == single_userid]['ratings count all years'].values[0]
-    user_range = range(user_count)
-    # df_user_ratings = df_ratings[df_ratings['userId'] == single_userid][['userId', 'movieId', 'rating']]
-    df_user_ratings = df_ratings.loc[user_range]
-    df_user_ratings_movies = pd.merge(df_user_ratings, df_movies, on='movieId', how='inner')
-    # my_index = single_userid - 1
-    print(df_user_ratings_movies.head())
-    try:
-        df_ratings.drop(user_range, inplace=True)
-        df_ratings.reset_index(drop=True, inplace=True)
-    except:
-        pass
-    return df_user_ratings_movies
+    df_user_ratings_movies_s = df_user_ratings_movies_2[df_user_ratings_movies_2['userId'] ==
+                                                        single_userid].reset_index(drop=True)
+
+    return df_user_ratings_movies_s
 
 
-def get_fav_genres(single_userid):
+def get_fav_genres():
     """
-    :param single_userid: a user id (integer)
     :return: three genres most rated by that user (set object),
              A dictionary keys=genres, value=number of times the genre appeared in the user's ratings
     """
@@ -109,38 +97,38 @@ def get_fav_genres(single_userid):
     return set(fav_genres[0:3]), genre_dict_user, genre_dict_initial
 
 
-def get_intersection(single_userid, df_users):
+def get_intersection(single_userid):
     global df_rated
-    df_rated = get_single_user_ratings(single_userid, df_users)
+    df_rated = get_single_user_ratings(single_userid)
 
     def to_set(row):
         # refactor to lambda function later
         return set(row)
-    df_rated['genres'] = df_rated['genres'].apply(to_set)
-    fav_genres = get_fav_genres(single_userid)[0]
+    df_rated['genres'] = df_rated['genres'].map(to_set)
+    fav_genres = get_fav_genres()[0]
 
     def genre_intersection(row):
         # refactor to lambda function later
         a = fav_genres.intersection(row)
         return a
-    df_rated['intersection fav genres'] = df_rated['genres'].apply(genre_intersection)
+    df_rated['intersection fav genres'] = df_rated['genres'].map(genre_intersection)
 
     def len_genre_intersection(row):
         # refactor to lambda function later
         a = fav_genres.intersection(row)
         return len(a)
-    df_rated['intersection value'] = df_rated['genres'].apply(len_genre_intersection)
+    df_rated['intersection value'] = df_rated['genres'].map(len_genre_intersection)
     return df_rated
 
 
-def user_mean_match(single_userid, df_users):
+def user_mean_match(single_userid):
     """
     :param single_userid: a user id (integer)
     :return: a dictionary {'match_mean': match_mean, 'no_match_mean': no_match_mean} where a match is defined as the
     intersection of most viewed genres with the genre of each movie that is not an empty set.
     no_match is where the intersection is an empty set.
     """
-    df_rated = get_intersection(single_userid, df_users)
+    df_rated = get_intersection(single_userid)
     df_rated_no_match = df_rated[df_rated['intersection value'] < 1]
     df_rated_match = df_rated[df_rated['intersection value'] >= 1]
     match_mean = df_rated_match['rating'].mean()
@@ -153,7 +141,7 @@ def user_mean_match_table():
     df_users = df_ratings[['userId', 'movieId', 'rating']].groupby('userId').count()[['rating']].reset_index()
     df_users.rename(columns={'rating': 'ratings count all years'}, inplace=True)
     # df_users['mean_match'] = df_users['userId'].apply(user_mean_match)
-    df_users['mean_match'] = df_users['userId'].loc[:2].apply(user_mean_match, df_users=df_users)  # !! .loc[:100] for testing
+    df_users['mean_match'] = df_users['userId'].loc[:2].map(user_mean_match)  # !! .loc[:100] for testing
 
     return df_users
 
@@ -167,20 +155,20 @@ df_movies.drop('title', axis=1, inplace=True)
 
 print('movies')
 print(df_movies.head())
-print(df_movies.info())
+# print(df_movies.info())
 print(len(df_movies), '\n')
 
 # ############ Ratings Data #############
 df_ratings = pd.read_csv(data_path_ml_25m('ratings.csv'))
 # df_ratings_sorted_count = df_ratings.groupby(by='userId').count()['rating']
 
-avg_ratings = df_ratings[['movieId', 'rating']].groupby('movieId', as_index=False).mean('rating')  # Average rating of
-#                                                                                             each movie over all time
-avg_ratings.rename(columns={'rating': 'avg_rating all years'}, inplace=True)
+# avg_ratings = df_ratings[['movieId', 'rating']].groupby('movieId', as_index=False).mean('rating')  # Average rating of
+# #                                                                                             each movie over all time
+# avg_ratings.rename(columns={'rating': 'avg_rating all years'}, inplace=True)
 
-count_ratings = df_ratings[['movieId', 'rating']].groupby('movieId', as_index=False).count()  # Count ratings for each
-#                                                                                               movie over all time
-count_ratings.rename(columns={'rating': 'ratings count all years'}, inplace=True)
+# count_ratings = df_ratings[['movieId', 'rating']].groupby('movieId', as_index=False).count()  # Count ratings for each
+# #                                                                                               movie over all time
+# count_ratings.rename(columns={'rating': 'ratings count all years'}, inplace=True)
 
 df_ratings['timestamp'] = pd.to_datetime(df_ratings['timestamp'], unit='s')
 print('ratings')
@@ -205,6 +193,8 @@ print(len(df_ratings), '\n')
 # print(len(df_merged), '\n')
 # #!!End Comment block for testing!!
 # ################### match vs no match, mean ratings per user #################
+df_user_ratings_movies_2 = pd.merge(df_ratings[['userId', 'movieId', 'rating']], df_movies, on='movieId', how='inner')
+
 start = time.time()
 df_user_mean_match = user_mean_match_table()
 end = time.time()
@@ -214,4 +204,6 @@ print(df_user_mean_match.head(10), '\n')
 
 delta = end-start
 print(delta)
-print(len(df_ratings))
+# print(len(df_ratings))
+
+# df_user_mean_match.to_csv(data_path_ml_25m('user_mean_match.csv'))
