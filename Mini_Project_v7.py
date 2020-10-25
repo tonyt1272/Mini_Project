@@ -113,48 +113,46 @@ def user_mean_match_table():
     return df_users
 
 
-# ############ MovieId Data #############
-df_movies = pd.read_csv(data_path_ml_25m('movies.csv'))
-# df_movies['release date'] = df_movies['title'].str.extract('.*\((\d\d\d\d)\).*', expand=True)
-# df_movies_unknown_release_date = df_movies[df_movies['release date'].isna()]
-df_movies['genres'] = df_movies['genres'].str.split('|')
-df_movies.drop('title', axis=1, inplace=True)
+if __name__ == "__main__":
+    # ############ MovieId Data #############
+    df_movies = pd.read_csv(data_path_ml_25m('movies.csv'))
+    # df_movies['release date'] = df_movies['title'].str.extract('.*\((\d\d\d\d)\).*', expand=True)
+    # df_movies_unknown_release_date = df_movies[df_movies['release date'].isna()]
+    df_movies['genres'] = df_movies['genres'].str.split('|')
+    df_movies.drop('title', axis=1, inplace=True)
 
-print('movies')
-print(df_movies.head())
-# print(df_movies.info())
-print(len(df_movies), '\n')
+    print('movies')
+    print(df_movies.head())
+    print(len(df_movies), '\n')
 
+    # ############ Ratings Data #############
+    df_ratings = pd.read_csv(data_path_ml_25m('ratings.csv'))
+    df_ratings['timestamp'] = pd.to_datetime(df_ratings['timestamp'], unit='s')  # pandas method, convert time column
+    print('ratings')
+    print(df_ratings.head())
+    print(len(df_ratings), '\n')
 
-# ############ Ratings Data #############
-df_ratings = pd.read_csv(data_path_ml_25m('ratings.csv'))
-df_ratings['timestamp'] = pd.to_datetime(df_ratings['timestamp'], unit='s')
-print('ratings')
-print(df_ratings.head())
-print(len(df_ratings), '\n')
+    # ################### match vs no match, mean ratings per user #################
+    df_user_ratings_movies = pd.merge(df_ratings[['userId', 'movieId', 'rating']], df_movies, on='movieId', how='inner')
+    df_user_ratings_movies['genres'] = df_user_ratings_movies['genres'].map(lambda row: set(row))  # list --> set
 
+    start = time.time()  # start time
+    df_user_mean_match = user_mean_match_table()    # takes a few hours for entire ml-25m data set to process
+    end = time.time()   # stop time
+    delta = end-start
 
-# ################### match vs no match, mean ratings per user #################
-df_user_ratings_movies = pd.merge(df_ratings[['userId', 'movieId', 'rating']], df_movies, on='movieId', how='inner')
-df_user_ratings_movies['genres'] = df_user_ratings_movies['genres'].map(lambda row: set(row))
+    df_user_mean_match.dropna(inplace=True)
 
-start = time.time()  # start time
-df_user_mean_match = user_mean_match_table()
-end = time.time()   # stop time
-delta = end-start
+    # ##### Unpacking the dictionary column into separate columns #####
+    df_user_mean_match['match_mean'] = df_user_mean_match['mean_match'].apply(lambda x: x['match'])
+    df_user_mean_match['no_match_mean'] = df_user_mean_match['mean_match'].apply(lambda x: x['no_match'])
 
-df_user_mean_match.dropna(inplace=True)
+    # ##### Write result to .csv #####
+    now = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+    df_user_mean_match.to_csv(data_path_ml_25m(f'user_mean_match_{now}.csv'), index=False)
 
-# ##### Unpacking the dictionary column into separate columns #####
-df_user_mean_match['match_mean'] = df_user_mean_match['mean_match'].apply(lambda x: x['match'])
-df_user_mean_match['no_match_mean'] = df_user_mean_match['mean_match'].apply(lambda x: x['no_match'])
+    print('User mean_match table')
+    print(df_user_mean_match.head(10), '\n')
+    print(len(df_user_mean_match), '\n')
 
-# ##### Write result to .csv #####
-now = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-df_user_mean_match.to_csv(data_path_ml_25m(f'user_mean_match_{now}.csv'), index=False)
-
-print('User mean_match table')
-print(df_user_mean_match.head(10), '\n')
-print(len(df_user_mean_match), '\n')
-
-print(f'total run time in seconds: {delta}')
+    print(f'total run time in seconds: {delta}')

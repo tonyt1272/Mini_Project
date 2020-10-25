@@ -1,13 +1,10 @@
 import seaborn as sns
-sns.set(style="ticks", color_codes=True,)
 import pandas as pd
 import os
-# import numpy as np
-# import time
-# from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
+sns.set(style="ticks", color_codes=True)
 desired_width = 320
 pd.set_option('display.width', desired_width)
 pd.set_option('display.max_columns', 15)
@@ -27,16 +24,13 @@ print(len(df_user_means), '\n')
 
 print(df_user_means.describe(), '\n')
 
-df_user_means.drop('mean_match',axis=1,inplace=True)
+df_user_means.drop('mean_match', axis=1, inplace=True)
 df_user_means = df_user_means[df_user_means['ratings count all years'] >= 100]
-
-df_user_means.rename(columns={'match_mean': 'genre match','no_match_mean': 'genre no match'}, inplace=True)
+df_user_means.rename(columns={'match_mean': 'genre match', 'no_match_mean': 'genre no match'}, inplace=True)
 
 fig1 = plt.figure(1, figsize=(16, 8))
 axes1 = fig1.add_axes([.1, .1, .8, .8])
 axes1.set_xlim([1, 5])
-# sns.histplot(df_user_means[['genre match', 'genre no match']], kde=False, bins=100, color='b', alpha=.75)
-
 
 df_user_means_stats = df_user_means.describe()
 mu_match = np.round(df_user_means_stats.loc['mean']['genre match'], decimals=2)
@@ -56,4 +50,3 @@ axes1.legend(labels=[f'genre no match, {mu_symbol}={mu_no_match}, {sigma_symbol}
                      f'genre match,      {mu_symbol}={mu_match}, {sigma_symbol}={std_match}'],
              bbox_to_anchor=(.35, 0.75))
 plt.show()
-
