@@ -22,7 +22,7 @@ def data_path_ml_25m(file_name):
 df_user_means = pd.read_csv(data_path_ml_25m('user_mean_match_10_25_2020_21_34_05.csv'))
 df_user_means.dropna(inplace=True)
 df_user_means.drop('mean_match', axis=1, inplace=True)
-df_user_means = df_user_means[df_user_means['ratings count all years'] >= 75]
+df_user_means = df_user_means[df_user_means['ratings count all years'] >= 100]
 
 print(df_user_means.head())
 print(len(df_user_means), '\n')
@@ -41,15 +41,15 @@ std_no_match = np.round(df_user_means_stats.loc['std']['genre no match'], decima
 mu_symbol = u'\u03BC'
 sigma_symbol = u'\u03C3'
 
-my_bins = 100
-sns.histplot(df_user_means['genre no match'], label='genre no match', kde=False, bins=my_bins, color='salmon', alpha=.9)
-sns.histplot(df_user_means['genre match'], label='genre match', kde=False, bins=my_bins, color='b', alpha=.7)
+bins = 100
+sns.histplot(df_user_means['genre no match'], label='genre no match', kde=False, bins=bins, color='salmon', alpha=.9)
+sns.histplot(df_user_means['genre match'], label='genre match', kde=False, bins=bins, color='b', alpha=.7)
 axes1.set_xlabel('User Mean Rating Bins', fontsize=14)
 axes1.set_ylabel('User Count', fontsize=14)
-axes1.set_title('User Mean Rating Distributions (Genre Match and Genre No Match)', fontsize=16)
+axes1.set_title('User Mean Rating Distribution (Genre Match and Genre No Match)', fontsize=16)
 axes1.legend(labels=[f'genre no match, {mu_symbol}={mu_no_match}, {sigma_symbol}={std_no_match}',
                      f'genre match,      {mu_symbol}={mu_match}, {sigma_symbol}={std_match}'],
-             bbox_to_anchor=(.40, 0.75))
+             bbox_to_anchor=(.35, 0.67))
 
 plt.setp(axes1.get_legend().get_texts(), fontsize='14')  # for legend text
 # plt.setp(axes1.get_legend().get_title(), fontsize='32') # for legend title

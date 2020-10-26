@@ -85,7 +85,8 @@ def get_intersection(single_userid):
     df_rated = df_user_ratings_movies[df_user_ratings_movies['userId'] == single_userid].reset_index(drop=True)
     fav_genres = get_fav_genres(df_rated)
     df_rated['intersection fav genres'] = df_rated['genres'].map(lambda row: fav_genres.intersection(row))
-    df_rated['intersection value'] = df_rated['genres'].map(lambda row: len(fav_genres.intersection(row)))
+    df_rated['intersection value'] = df_rated['intersection fav genres'].map(lambda row: len(row))
+
     return df_rated
 
 
@@ -132,7 +133,8 @@ def user_genre_check_util(single_userid):
     df_rated = df_user_ratings_movies_loc[df_user_ratings_movies_loc['userId'] == single_userid].reset_index(drop=True)
     fav_genres = get_fav_genres(df_rated)
     df_rated['intersection fav genres'] = df_rated['genres'].map(lambda row: fav_genres.intersection(row))
-    df_rated['intersection value'] = df_rated['genres'].map(lambda row: len(fav_genres.intersection(row)))
+    df_rated['intersection value'] = df_rated['intersection fav genres'].map(lambda row: len(row))
+
     print(f'userid = {single_userid}\nmost viewed = {fav_genres}', '\n')
     print(df_rated.head())
     return df_rated
