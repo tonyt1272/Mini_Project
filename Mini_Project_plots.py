@@ -18,7 +18,8 @@ def data_path_ml_25m(file_name):
     return os.path.join('C:\\Users', 'Anthony', 'Desktop', 'data', 'ml-25m', file_name)
 
 
-df_user_means = pd.read_csv(data_path_ml_25m('user_mean_match_10_24_2020_18_59_41.csv'))
+# df_user_means = pd.read_csv(data_path_ml_25m('user_mean_match_10_24_2020_18_59_41.csv'))
+df_user_means = pd.read_csv(data_path_ml_25m('user_mean_match_10_25_2020_21_34_05.csv'))
 df_user_means.dropna(inplace=True)
 df_user_means.drop('mean_match', axis=1, inplace=True)
 df_user_means = df_user_means[df_user_means['ratings count all years'] >= 75]

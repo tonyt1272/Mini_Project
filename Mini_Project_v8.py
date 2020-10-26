@@ -34,7 +34,7 @@ genres_dict_init = {'Action': 0,
                     'Western': 0,
                     'IMAX': 0}
 
-
+genre_dict_user = genres_dict_init.copy()
 unlisted_genres = set({})  # holds genres not included in master genre dictionary used in get_user_genre_count()
 
 
@@ -49,34 +49,15 @@ def date_year(date):
         return None
 
 
-# def get_user_genre_count(df_rated):
-#     """
-#     :param df_rated: A dataFrame of user ratings from a single userId
-#     :return: A dictionary keys=genres, value=number of times the genre appeared in the user's ratings
-#     """
-#     genre_dict_user = genres_dict_init.copy()
-#     for row in range(len(df_rated)):
-#         for item in df_rated.loc[row]['genres']:
-#             try:
-#                 genre_dict_user[item] += 1
-#             except KeyError:
-#                 unlisted_genres.add(item)
-#     return genre_dict_user
+def scalar_genre_count(row):
+    for item in row:
+        try:
+            genre_dict_user[item] += 1
+        except KeyError:
+            unlisted_genres.add(item)
 
 
-def get_user_genre_count(df_rated):
-    """
-    :param df_rated: A dataFrame of user ratings from a single userId
-    :return: A dictionary keys=genres, value=number of times the genre appeared in the user's ratings
-    """
-    genre_dict_user1 = genres_dict_init.copy()
-    for row in df_rated.itertuples():
-        for item in row[4]:
-            try:
-                genre_dict_user1[item] += 1
-            except KeyError:
-                unlisted_genres.add(item)
-    return genre_dict_user1
+vec_get_user_genre_count = np.vectorize(scalar_genre_count, otypes=[set])
 
 
 def get_fav_genres(df_rated):
@@ -85,21 +66,24 @@ def get_fav_genres(df_rated):
     :return: three genres most rated by that user (set object),
              A dictionary keys=genres, value=number of times the genre appeared in the user's ratings
     """
-    genre_dict_user = get_user_genre_count(df_rated)
-    genre_dict_initial = genre_dict_user.copy()
+    global genre_dict_user
+
+    vec_get_user_genre_count(df_rated['genres'].values)
+
     fav_genres = []
-    while (len(fav_genres) < 3) and (sum(genre_dict_user.values()) > 0):
-        max_value = max(genre_dict_user.values())
-        max_keys = [k for k, v in genre_dict_user.items() if v == max_value]
+    while (len(fav_genres) < 3) and (sum(genre_dict_user.values()) > 0):  # ok to loop here, the genre dict is not that
+        max_value = max(genre_dict_user.values())                         # big.
+        max_keys = [k for (k, v) in genre_dict_user.items() if v == max_value]
         for key in max_keys:
             fav_genres.append(key)
             genre_dict_user.pop(key)
-    return set(fav_genres[0:3]), genre_dict_user, genre_dict_initial
+    genre_dict_user = genres_dict_init.copy()
+    return set(fav_genres[0:3])
 
 
 def get_intersection(single_userid):
     df_rated = df_user_ratings_movies[df_user_ratings_movies['userId'] == single_userid].reset_index(drop=True)
-    fav_genres = get_fav_genres(df_rated)[0]
+    fav_genres = get_fav_genres(df_rated)
     df_rated['intersection fav genres'] = df_rated['genres'].map(lambda row: fav_genres.intersection(row))
     df_rated['intersection value'] = df_rated['genres'].map(lambda row: len(fav_genres.intersection(row)))
     return df_rated
@@ -123,9 +107,35 @@ def user_mean_match(single_userid):
 def user_mean_match_table():
     df_users = df_ratings[['userId', 'movieId', 'rating']].groupby('userId').count()[['rating']].reset_index()
     df_users.rename(columns={'rating': 'ratings count all years'}, inplace=True)
-    # df_users['mean_match'] = df_users['userId'].apply(user_mean_match)
+    # df_users['mean_match'] = df_users['userId'].apply(user_mean_match)  # !!Full run over entire ml-25m
     df_users['mean_match'] = df_users['userId'].loc[:199].map(user_mean_match)  # !!testing part of data for speed!!
     return df_users
+
+
+def user_genre_check_util(single_userid):
+    """
+    Utility Function for checking s single user's 3 most viewed genres, and finding the intersection of those genres
+    with the genres listed in each movie rated by the user.  This was used as QA for values in final processed data set.
+    :param single_userid: integer userid
+    :return: dataframe
+    """
+    df_movies_loc = pd.read_csv(data_path_ml_25m('movies.csv'))
+    # df_movies['release date'] = df_movies['title'].str.extract('.*\((\d\d\d\d)\).*', expand=True)
+    # df_movies_unknown_release_date = df_movies[df_movies['release date'].isna()]
+    df_movies_loc['genres'] = df_movies_loc['genres'].str.split('|')
+    df_movies_loc.drop('title', axis=1, inplace=True)
+    df_ratings_loc = pd.read_csv(data_path_ml_25m('ratings.csv'))
+    df_ratings_loc['timestamp'] = pd.to_datetime(df_ratings_loc['timestamp'], unit='s')  # pandas, convert time column
+    df_user_ratings_movies_loc = pd.merge(df_ratings_loc[['userId', 'movieId', 'rating']],
+                                          df_movies_loc, on='movieId', how='inner')
+    df_user_ratings_movies_loc['genres'] = df_user_ratings_movies_loc['genres'].map(lambda row: set(row))  # list to set
+    df_rated = df_user_ratings_movies_loc[df_user_ratings_movies_loc['userId'] == single_userid].reset_index(drop=True)
+    fav_genres = get_fav_genres(df_rated)
+    df_rated['intersection fav genres'] = df_rated['genres'].map(lambda row: fav_genres.intersection(row))
+    df_rated['intersection value'] = df_rated['genres'].map(lambda row: len(fav_genres.intersection(row)))
+    print(f'userid = {single_userid}\nmost viewed = {fav_genres}', '\n')
+    print(df_rated.head())
+    return df_rated
 
 
 if __name__ == "__main__":
