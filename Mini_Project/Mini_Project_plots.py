@@ -42,8 +42,8 @@ mu_symbol = u'\u03BC'
 sigma_symbol = u'\u03C3'
 
 bins = 100
-sns.histplot(df_user_means['genre no match'], label='genre no match', kde=False, bins=bins, color='salmon', alpha=.9)
-sns.histplot(df_user_means['genre match'], label='genre match', kde=False, bins=bins, color='b', alpha=.7)
+sns.histplot(df_user_means['genre no match'], label='genre no match', kde=True, bins=bins, color='salmon', alpha=.9)
+sns.histplot(df_user_means['genre match'], label='genre match', kde=True, bins=bins, color='b', alpha=.7)
 axes1.set_xlabel('User Mean Rating Bins', fontsize=14)
 axes1.set_ylabel('User Count', fontsize=14)
 axes1.set_title('User Mean Rating Distribution (Genre Match and Genre No Match)', fontsize=16)
