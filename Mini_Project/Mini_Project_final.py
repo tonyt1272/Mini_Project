@@ -82,7 +82,7 @@ def get_fav_genres(df_rated):
     :return: three genres most rated by that user (set object),
              A dictionary keys=genres, value=number of times the genre appeared in the user's ratings
     """
-    global genre_dict_user
+    global genre_dict_user  # refactor this out later!!!
 
     vec_get_user_genre_count(df_rated['genres'].values)
     # print(genre_dict_user)
@@ -130,8 +130,9 @@ def user_mean_match(single_userid):
 def user_mean_match_table():
     df_users = df_ratings[['userId', 'movieId', 'rating']].groupby('userId').count()[['rating']].reset_index()
     df_users.rename(columns={'rating': 'ratings count all years'}, inplace=True)
-    # df_users['mean_match'] = df_users['userId'].apply(user_mean_match)  # !!Full run over entire ml-25m
-    df_users['mean_match'] = df_users['userId'].loc[:199].map(user_mean_match)  # testing data userId[1] = loc[0:0]
+    # df_users['mean_match'] = df_users['userId'].apply(user_mean_match)  # !! Full run over entire ml-25m, 2.5 hours !!
+    #
+    df_users['mean_match'] = df_users['userId'].loc[:199].map(user_mean_match)  # For Testing, just runs the first 200
     return df_users
 
 

@@ -14,12 +14,18 @@ sns.set_style('whitegrid')  # 'darkgrid'  grid lines with dark background
 #                           # 'whitegrid' grid lines with light background
 
 
-def data_path_ml_25m(file_name):
-    return os.path.join('C:\\Users', 'Anthony', 'Desktop', 'data', 'ml-25m', file_name)
+file_name = 'user_mean_match_10_25_2020_21_34_05.csv'
 
 
-# df_user_means = pd.read_csv(data_path_ml_25m('user_mean_match_10_24_2020_18_59_41.csv'))
-df_user_means = pd.read_csv(data_path_ml_25m('user_mean_match_10_25_2020_21_34_05.csv'))
+def data_path_ml_25m(my_file_name):
+    return os.path.join('C:\\Users', 'Anthony', 'Desktop', 'data', 'ml-25m', my_file_name)
+
+
+try:
+    df_user_means = pd.read_csv(file_name)
+except FileNotFoundError:
+    df_user_means = pd.read_csv(data_path_ml_25m(file_name))
+
 df_user_means.dropna(inplace=True)
 df_user_means.drop('mean_match', axis=1, inplace=True)
 df_user_means = df_user_means[df_user_means['ratings count all years'] >= 100]
@@ -52,6 +58,5 @@ axes1.legend(labels=[f'genre no match, {mu_symbol}={mu_no_match}, {sigma_symbol}
              bbox_to_anchor=(.35, 0.67))
 
 plt.setp(axes1.get_legend().get_texts(), fontsize='14')  # for legend text
-# plt.setp(axes1.get_legend().get_title(), fontsize='32') # for legend title
 
 plt.show()
